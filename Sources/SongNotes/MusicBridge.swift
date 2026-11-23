@@ -54,10 +54,12 @@ enum MusicBridge {
           set pid to persistent ID of t
           set d to "" & 0
           try
-            set d to (round (duration of t)) as text
+            set rawD to (get duration of t)
+            set d to (round rawD) as text
           on error
             try
-              set d to (round (duration of (first track of library playlist 1 whose persistent ID is pid))) as text
+              set rawD to (get duration of (first track of library playlist 1 whose persistent ID is pid))
+              set d to (round rawD) as text
             end try
           end try
           set b to "0"

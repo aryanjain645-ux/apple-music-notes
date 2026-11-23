@@ -6,8 +6,8 @@ enum SetupWindow {
     private static var window: NSWindow?
 
     static func show() {
-        if let window { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return }
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 320),
+        if let window, window.isVisible { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return }
+        let w = EditingWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 320),
                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
         w.title = "SongNotes Settings"
         w.isReleasedWhenClosed = false

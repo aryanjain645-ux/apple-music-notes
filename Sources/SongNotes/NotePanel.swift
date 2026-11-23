@@ -1,18 +1,14 @@
 import AppKit
 import SwiftUI
 
-final class KeyPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
-}
-
 @MainActor
 final class NotePanelController {
-    private var panel: KeyPanel?
+    private var panel: EditingPanel?
 
     func show(track: Track?) {
         close()
         let host = NSHostingView(rootView: NoteView(track: track, onClose: { [weak self] in self?.close() }))
-        let p = KeyPanel(contentRect: NSRect(x: 0, y: 0, width: 460, height: 180),
+        let p = EditingPanel(contentRect: NSRect(x: 0, y: 0, width: 460, height: 180),
                          styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
         p.titlebarAppearsTransparent = true
         p.titleVisibility = .hidden
