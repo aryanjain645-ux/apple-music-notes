@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.songnotes.app</string>
+	<key>CFBundleName</key>
+	<string>SongNotes</string>
+	<key>CFBundleDisplayName</key>
+	<string>SongNotes</string>
+	<key>CFBundleExecutable</key>
+	<string>SongNotes</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>SongNotes reads the song playing in Music, writes your tags into its Comments, and creates playlists.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SongNotes listens when you press the mic button so you can speak a note.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SongNotes turns your spoken note into text on this Mac.</string>
+</dict>
+</plist>
