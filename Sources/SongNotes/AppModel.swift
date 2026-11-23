@@ -23,6 +23,8 @@ final class AppModel: ObservableObject {
     private var hotkey: Hotkey?
     private var timer: Timer?
     private var syncing = false
+    /// Set after a 429/5xx from the tagger so we don't spend the (tiny) free quota retrying.
+    private var taggingPausedUntil: Date?
     let panel = NotePanelController()
 
     private static let queueFile = Config.dir.appendingPathComponent("queue.json")
@@ -52,6 +54,21 @@ final class AppModel: ObservableObject {
         }
     }
 
+    private var pauseReason = ""
+
+    /// 429: wait as long as Google says (its RetryInfo "retryDelay": "12307s"), else an hour.
+    /// 5xx: wait 15 minutes.
+    private func pauseTagging(code: Int, body: String) {
+        var seconds: Double = code == 429 ? 3600 : 900
+        if code == 429,
+           let r = body.range(of: #""retryDelay":\s*"([0-9.]+)s""#, options: .regularExpression) {
+            let digits = body[r].filter { "0123456789.".contains($0) }
+            if let d = Double(digits) { seconds = d + 60 }
+        }
+        pauseReason = code == 429 ? "AI quota used up" : "AI service busy"
+        taggingPausedUntil = Date().addingTimeInterval(seconds)
+    }
+
     func refreshNowPlaying() {
         do {
             current = try MusicBridge.nowPlaying()
@@ -70,6 +87,7 @@ final class AppModel: ObservableObject {
 
     func configChanged(_ c: Config) {
         config = c
+        taggingPausedUntil = nil
         Task { await sync() }
     }
 
@@ -116,7 +134,10 @@ final class AppModel: ObservableObject {
         }
 
         // 2. Tag pending notes.
-        if let tagger {
+        if let until = taggingPausedUntil, until > Date() {
+            status = "AI tagging paused until \(until.formatted(date: .omitted, time: .shortened)) (\(pauseReason)). Notes are saved."
+        } else if let tagger {
+            taggingPausedUntil = nil
             let vocab = (try? await store.tagCounts())?.map(\.label) ?? tagCounts.map(\.label)
             var vocabulary = Array(Set(vocab)).sorted()
             for p in (try? await store.pendingNotes()) ?? [] {
@@ -130,7 +151,11 @@ final class AppModel: ObservableObject {
                     await mirror(persistentID: p.persistent_id)
                     status = "Tagged \(p.tracks?.title ?? "note"): \(tags.commentLine)"
                 } catch let e as Tagger.TagError {
-                    if case .http(let code, _) = e, code == 429 || code >= 500 { break } // retry next sync
+                    if case .http(let code, let body) = e, code == 429 || code >= 500 {
+                        pauseTagging(code: code, body: body)
+                        status = "AI tagging paused until \(taggingPausedUntil!.formatted(date: .omitted, time: .shortened)) (\(pauseReason)). Notes are saved."
+                        break
+                    }
                     try? await store.markTagFailed(noteID: p.id)
                     status = e.localizedDescription
                 } catch {

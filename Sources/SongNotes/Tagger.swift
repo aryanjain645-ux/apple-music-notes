@@ -120,11 +120,12 @@ struct Tagger {
         return text
     }
 
-    /// Retries briefly when Google says the model is overloaded (503) or rate-limited (429).
+    /// Retries once when Google says the model is overloaded (503). A 429 (quota) is thrown straight away:
+    /// the free tier allows only ~20 requests a day, so retrying would just burn it.
     private func postGemini(_ body: [String: Any]) async throws -> Data {
         let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent")!
         var lastError: Error = TagError.noText
-        for attempt in 0..<3 {
+        for attempt in 0..<2 {
             var req = URLRequest(url: url)
             req.httpMethod = "POST"
             req.timeoutInterval = 60
@@ -135,8 +136,8 @@ struct Tagger {
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 200 { return data }
             lastError = TagError.http(code, String(decoding: data, as: UTF8.self))
-            guard code == 503 || code == 429 else { break }
-            try await Task.sleep(nanoseconds: UInt64(2 + attempt * 4) * 1_000_000_000)
+            guard code == 503, attempt == 0 else { break }
+            try await Task.sleep(nanoseconds: 5_000_000_000)
         }
         throw lastError
     }
